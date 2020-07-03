@@ -1,0 +1,15 @@
+<component name="libraryTable">
+  <library name="sfs2x">
+    <CLASSES>
+      <root url="jar://$USER_HOME$/SmartFoxServer_2X/SFS2X/lib/sfs2x.jar!/" />
+      <root url="jar://$USER_HOME$/SmartFoxServer_2X/SFS2X/lib/sfs2x-util.jar!/" />
+      <root url="jar://$USER_HOME$/SmartFoxServer_2X/SFS2X/lib/sfs2x-lib.jar!/" />
+      <root url="jar://$USER_HOME$/SmartFoxServer_2X/SFS2X/lib/sfs2x-core.jar!/" />
+      <root url="jar://$USER_HOME$/SmartFoxServer_2X/SFS2X/lib/sfs2x-admin.jar!/" />
+      <root url="jar://$USER_HOME$/SmartFoxServer_2X/SFS2X/lib/slf4j-api-1.7.5.jar!/" />
+      <root url="jar://$USER_HOME$/SmartFoxServer_2X/SFS2X/lib/slf4j-log4j12-1.7.5.jar!/" />
+    </CLASSES>
+    <JAVADOC />
+    <SOURCES />
+  </library>
+</component>
