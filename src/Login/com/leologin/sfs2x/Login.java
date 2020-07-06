@@ -21,24 +21,39 @@ public class Login extends BaseServerEventHandler {
         Entrance gameExt = (Entrance) getParentExtension();
         User player = (User) event.getParameter(SFSEventParam.USER);
 
+
         //取得登入資訊
         String account = ((String) event.getParameter(SFSEventParam.LOGIN_NAME)).toLowerCase();     //取得帳號轉成小寫
         String password = (String) event.getParameter(SFSEventParam.LOGIN_PASSWORD);                //取得密碼
-//        ISession session = (ISession) event.getParameter(SFSEventParam.SESSION);                    //取得Session
-
-        //測試客端登入所帶的參數
-
+        ISession session = (ISession) event.getParameter(SFSEventParam.SESSION);                    //取得Session
+        ISFSObject loginInData = (ISFSObject) event.getParameter(SFSEventParam.LOGIN_IN_DATA);
 
 
+        if(loginInData.containsKey("LoginState")){
+            //("4")
+            if(loginInData.getUtfString("LoginState").equals("4")){
+                System.out.println("loginInData Good!");
+            }else{
+                getApi().disconnect(session);
+            }
+        }else{
+            System.out.println("LoginState not found");
+            getApi().disconnect(session);
+        }
 
-//        //回傳值這裡還不能回傳，因為還在Login階段 還沒結束確認Login
-//        ISFSObject outData = (ISFSObject) event.getParameter(SFSEventParam.LOGIN_OUT_DATA);
-//        outData.putUtfString("LoginState",loginInData.getUtfString("LoginState"));
-//        outData.putUtfString("Welcome",account);
-//        outData.putUtfString("Password",password);
-//        outData.putInt("sum",sum);
-//
-//        gameExt.send("Login",outData,player);
+        //回傳LOGIN_OUT_DATA
+        ISFSObject outData = (ISFSObject) event.getParameter(SFSEventParam.LOGIN_OUT_DATA);
+        outData.putUtfString("YourAccount", account);
+        outData.putUtfString("YourPassword", password);
+        outData.putUtfString("LoginState", loginInData.getUtfString("LoginState"));
+
+
+
+
+
+
+
+
 
     }
 }
