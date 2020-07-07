@@ -30,9 +30,13 @@ public class Login extends BaseServerEventHandler {
 
 
         if(loginInData.containsKey("LoginState")){
-            //("4")
+            //("4") 登入OK 寫入session
             if(loginInData.getUtfString("LoginState").equals("4")){
                 System.out.println("loginInData Good!");
+                session.setProperty("LoginState", loginInData.getUtfString("LoginState"));
+                session.setProperty("Account", account);
+                session.setProperty("APIUserGameID", loginInData.getUtfString("APIUserGameID"));
+
             }else{
                 getApi().disconnect(session);
             }
