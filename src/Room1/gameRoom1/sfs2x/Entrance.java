@@ -15,6 +15,7 @@ import com.smartfoxserver.v2.entities.Room;
 import com.smartfoxserver.v2.entities.User;
 import com.smartfoxserver.v2.entities.Zone;
 import com.smartfoxserver.v2.entities.data.ISFSObject;
+import com.smartfoxserver.v2.entities.data.SFSObject;
 import com.smartfoxserver.v2.extensions.SFSExtension;
 
 import java.io.IOException;
@@ -164,8 +165,216 @@ public class Entrance extends SFSExtension {
 
 
     //算主遊戲結果
+    public long getBaseResult(long lineBet){
+        HashMap<String, Object> resp = null;
+
+        int runCount = 0;
+        //取得bankProps內的屬性(剛剛設的)
+        double rate = Double.parseDouble(bankProps.getProperty("WinRate")) * 100;
+        long bank = Long.parseLong(bankProps.getProperty("Bank"));
+        long totalWin = 0;
+        long totalBet = logic.getTotalBet(lineBet);
+
+        prob = Integer.parseInt(getZone().getProperty("GameProb" + gameID).toString());
+
+        round++;
+        seqRound++;
+
+        log.info("[" + zoneName + "]" + "[" + roomName + "]" + "=========== " + grpID + "-" + round + " ===========");
+
+        //算出可出的獎
+        if(gameMode == 0)
+        {
+            do
+            {
+                resp = logic.getBaseResult(lineBet, rate, (double)prob - probRange, freeLight);
+                totalWin = (long) resp.get("TotalWin");
+                runCount++;
+
+            }while((bank < totalWin && totalWin != 0) || (bank < 0 && totalWin != 0));
+
+            log.info("[" + zoneName + "]" + "[" + roomName + "]" + "bet:" + lineBet + ", rate:" + rate + ", prob:" + prob + ", useProb:" + (int) resp.get("UseProb") + ", runCount:" + runCount);
+        }
+
+        ISFSObject respObj = new SFSObject();
+        respObj.putClass("resp", resp);
+        log.info("[" + zoneName + "]" + "[" + roomName + "]" + "Base resp:" + respObj.toJson());
+
+        freeSpinWin = 0;
+
+        grid = (int[]) resp.get("Grid");
+        freeLight = (int[]) resp.get("FreeLight");
+
+        freeSpinCount = (int) resp.get("FreeSpinCount");
+        superSpinCount = (int) resp.get("SuperSpinCount");
+
+        log.info("[" + zoneName + "]" + "[" + roomName + "]" + "baseWin:" + totalWin);
 
 
+        //出免費遊戲
+        int freeMode = (int) resp.get("FreeMode");
+        if(freeMode != 0)
+        {
+            reSpinBet = lineBet;
+            freeLight = new int[maxReel];
+
+            if(freeMode == GameState.STATE_FREE_GAME.getId())
+                gameState = GameState.STATE_FREE_GAME;
+            else if(freeMode == GameState.STATE_SUPER_GAME.getId())
+                gameState = GameState.STATE_SUPER_GAME;
+        }
+
+        //將局需求 存將初始贏分
+        seqOpenWin = totalWin;
+
+        //存Bank
+        setBank(gameMode, totalBet, totalWin);
+        saveBankProps(zoneName, roomName);
+
+        return totalWin;
+    }
+
+    //算出免費遊戲結果
+    public long getFreeResult(long lineBet){
+
+        HashMap<String, Object> resp = null;
+        int runCount = 0;
+
+        double rate = Double.parseDouble(bankProps.getProperty("WinRate")) * 100;
+        long bank = Long.parseLong(bankProps.getProperty("Bank"));
+
+        long totalWin = 0;
+
+        prob = Integer.parseInt(getZone().getProperty("GameProb" + gameID).toString());
+
+        round++;
+        seqRound++;
+
+        //中免費遊戲
+        if(freeSpinCount > 0)
+        {
+            log.info("[" + zoneName + "]" + "[" + roomName + "]" + "=========== " + grpID + "-" + round + " ===========");
+
+            //算出可出的獎
+            if(gameMode == 0)
+            {
+                do
+                {
+                    resp = logic.getFreeResult(lineBet, rate, (double)prob - probRange, freeLight);
+                    totalWin = (long) resp.get("TotalWin");
+                    runCount++;
+
+                }while((bank < totalWin && totalWin != 0) || (bank < 0 && totalWin != 0));
+
+            }
+
+            ISFSObject respObj = new SFSObject();
+            respObj.putClass("resp", resp);
+            log.info("[" + zoneName + "]" + "[" + roomName + "]" + "bet:" + lineBet + ", rate:" + rate + ", prob:" + prob + ", runCount:" + runCount);
+            log.info("[" + zoneName + "]" + "[" + roomName + "]" + "Free resp:" + respObj.toJson());
+
+
+            grid = (int[]) resp.get("Grid");
+            freeLight = (int[]) resp.get("FreeLight");
+
+            superSpinCount = (int) resp.get("SuperSpinCount");
+
+            freeToFree = (int) resp.get("FreeSpinCount");
+            freeSpinCount += freeToFree;
+            freeSpinCount--;
+            freeSpinWin += totalWin;
+
+            log.info("[" + zoneName + "]" + "[" + roomName + "]" + "freeWin:" + totalWin);
+            log.info("[" + zoneName + "]" + "[" + roomName + "]" + "freeTotalWin:" + freeSpinWin);
+
+            //存Bank
+            setBank(gameMode, 0, totalWin);
+            saveBankProps(zoneName, roomName);
+
+            int freeMode = (int) resp.get("FreeMode");
+            if(freeMode != 0)
+            {
+                if(freeMode == GameState.STATE_SUPER_GAME.getId())
+                {
+                    freeSpinCount = 0;
+                    freeLight = new int[maxReel];
+                    gameState = GameState.STATE_SUPER_GAME;
+                }
+            }
+            //免費遊戲 結束
+            else if(freeSpinCount <= 0)
+                gameState = GameState.STATE_BASE_GAME;
+
+            log.info("[" + zoneName + "]" + "[" + roomName + "]" + "freeSpinCount:" + freeSpinCount);
+        }
+
+        return totalWin;
+
+    }
+
+    //取特殊獎
+    public long getSuperResult(long lineBet)
+    {
+        HashMap<String, Object> resp = null;
+        int runCount = 0;
+
+        double rate = Double.parseDouble(bankProps.getProperty("WinRate")) * 100;
+        long bank = Long.parseLong(bankProps.getProperty("Bank"));
+
+        long totalWin = 0;
+
+        prob = Integer.parseInt(getZone().getProperty("GameProb" + gameID).toString());
+
+        round++;
+        seqRound++;
+
+        //中免費遊戲
+        if(superSpinCount > 0)
+        {
+            log.info("[" + zoneName + "]" + "[" + roomName + "]" + "=========== " + grpID + "-" + round + " ===========");
+
+            //算出可出的獎
+            if(gameMode == 0)
+            {
+                do
+                {
+                    resp = logic.getSuperResult(lineBet, rate, (double)prob - probRange);
+                    totalWin = (long) resp.get("TotalWin");
+                    runCount++;
+                }while((bank < totalWin && totalWin != 0) || (bank < 0 && totalWin != 0));
+
+            }
+
+            ISFSObject respObj = new SFSObject();
+            respObj.putClass("resp", resp);
+            log.info("[" + zoneName + "]" + "[" + roomName + "]" + "bet:" + lineBet + ", rate:" + rate + ", prob:" + prob + ", runCount:" + runCount);
+            log.info("[" + zoneName + "]" + "[" + roomName + "]" + "super resp:" + respObj.toJson());
+
+            grid = (int[]) resp.get("Grid");
+
+            superToSuper = (int) resp.get("SuperSpinCount");
+            superSpinCount += superToSuper;
+            superSpinCount--;
+            freeSpinWin += totalWin;
+
+            superTimes = (int) resp.get("Times");
+
+            log.info("[" + zoneName + "]" + "[" + roomName + "]" + "superWin:" + totalWin);
+            log.info("[" + zoneName + "]" + "[" + roomName + "]" + "freeTotalWin:" + freeSpinWin);
+
+            //存Bank
+            setBank(gameMode, 0, totalWin);
+            saveBankProps(zoneName, roomName);
+
+            //免費遊戲 結束
+            if(superSpinCount <= 0)
+                gameState = GameState.STATE_BASE_GAME;
+
+            log.info("[" + zoneName + "]" + "[" + roomName + "]" + "superSpinCount:" + superSpinCount);
+        }
+
+        return totalWin;
+    }
 
 
 
