@@ -12,7 +12,6 @@ public class UserJoinLobby extends BaseServerEventHandler {
 
         Entrance gameExt = (Entrance) getParentExtension();
         User player = (User) event.getParameter(SFSEventParam.USER);
-
         if (player != null)
         {
             System.out.println("UserJoinLobby");

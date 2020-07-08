@@ -20,7 +20,11 @@ public class TableInfo extends BaseClientRequestHandler {
         Room slotRoom = null;
         try
         {
-            slotRoom = gameExt.getZone().getRoomByName(getRoomName(gameExt.getGameRoom().getName().replace("GameLobby","game")));
+            System.out.println("getName: "+gameExt.getGameRoom().getName());      //Room1
+            System.out.println("getName.replace: "+gameExt.getGameRoom().getName().replace("Room","game"));      //game1
+
+            System.out.println("getRoomName(game1): " + getRoomName(gameExt.getGameRoom().getName().replace("Room","game")));
+            slotRoom = gameExt.getZone().getRoomByName(getRoomName(gameExt.getGameRoom().getName().replace("Room","game")));
         }
         catch(SFSCreateRoomException | SFSTooManyRoomsException e)
         {
@@ -48,7 +52,7 @@ public class TableInfo extends BaseClientRequestHandler {
             //沒房創房
             if(gameExt.getZone().getRoomByName(roomName) == null){
                 CreateRoomSettings.RoomExtensionSettings ExtensionSetting =
-                        new CreateRoomSettings.RoomExtensionSettings("game", "gameRoom1.sfs2x.Entrance");
+                        new CreateRoomSettings.RoomExtensionSettings("game", "Room1.gameRoom1.sfs2x.Entrance");
                 setting.setName(roomName);
                 setting.setPassword(null);
                 setting.setMaxUsers(1);

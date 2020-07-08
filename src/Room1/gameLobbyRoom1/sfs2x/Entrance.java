@@ -22,15 +22,15 @@ public class Entrance extends SFSExtension {
 
         gameID = Integer.parseInt(getConfigProperties().getProperty("GameID"));
         gameName = getConfigProperties().getProperty("GameName");
-
         roomCount = Integer.parseInt(getConfigProperties().getProperty("RoomCount"));
 
         getZone().setProperty("GameName" + gameID, gameName);
         getGameRoom().setProperty("Config", getConfigProperties());
 
-
-
+        //這些都寫在extension/config 內 後台要掛載
+        //                         LeoTest                  Room1                       OneLine
         System.out.println("zoneName: " + zoneName + " roomName: " + roomName + " gameName: " + gameName);
+        //                          1                       200
         System.out.println("gameID: " + gameID + " roomCount: " + roomCount);
 
 
