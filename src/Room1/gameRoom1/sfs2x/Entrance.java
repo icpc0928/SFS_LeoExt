@@ -142,7 +142,10 @@ public class Entrance extends SFSExtension {
         bankProps.setProperty("Count", "0");
         bankProps.setProperty("Prob", String.valueOf(prob));
 
+        System.out.println("Debug01: " + gameID);
+
         prob = Integer.parseInt(getZone().getProperty("GameProb" + gameID).toString());
+
         System.out.println("prob: " + prob);
         roomName = getGameRoom().getName();
         zoneName = getZone().getName();
