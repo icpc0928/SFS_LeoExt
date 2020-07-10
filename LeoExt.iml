@@ -13,5 +13,6 @@
     <orderEntry type="library" name="Helper" level="project" />
     <orderEntry type="library" name="Log" level="project" />
     <orderEntry type="library" name="Notify" level="project" />
+    <orderEntry type="library" name="org.json" level="project" />
   </component>
 </module>

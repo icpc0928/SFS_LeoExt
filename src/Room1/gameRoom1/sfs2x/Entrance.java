@@ -17,8 +17,11 @@ import com.smartfoxserver.v2.entities.Zone;
 import com.smartfoxserver.v2.entities.data.ISFSObject;
 import com.smartfoxserver.v2.entities.data.SFSObject;
 import com.smartfoxserver.v2.extensions.SFSExtension;
+import org.json.JSONException;
+import org.json.JSONObject;
 
 import java.io.IOException;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Properties;
@@ -376,6 +379,124 @@ public class Entrance extends SFSExtension {
         return totalWin;
     }
 
+    //////////////////////////////////////////////////////
+    //功能
+    //////////////////////////////////////////////////////
+
+    //初始化圖示
+    public void initGrid()
+    {
+        grid = logic.initGrid((double)prob);
+    }
+
+    //結算成績
+    public ISFSObject setGameBet(User player, int mode, long userPoint, long bet, int gameType)
+    {
+        int memberID = Integer.parseInt(player.getProperty("MemberID").toString());
+
+        ISFSObject data = new SFSObject();
+        data.putInt("memberID", memberID);
+        data.putInt("gameID", gameID);
+        data.putUtfString("grpID", grpID);
+        data.putInt("round", round);
+        data.putLong("totalBetPoint", bet);
+
+        log.info( "[" + zoneName + "]" + "[" + roomName + "]" + player.getName() + ", " + data.toJson());
+
+        //押注
+        ISFSObject resp = betClass.setGameBet(zoneName, roomName, Integer.valueOf(player.getProperty("LoginState").toString()), memberID, "", gameID, round, "0", grpID, userPoint, bet, gameType);
+
+        return resp;
+    }
+
+    //結算成績
+    public ISFSObject setGameResult(User player, int mode, long bet, long win, long userPoint, String code, long newCurrentPoints, int[] grid, int gameType) throws JSONException
+    {
+        int memberID = Integer.parseInt(player.getProperty("MemberID").toString());
+
+        ISFSObject data = new SFSObject();
+        data.putInt("memberID", memberID);
+        data.putInt("gameID", gameID);
+        data.putUtfString("grpID", grpID);
+        data.putInt("round", round);
+        data.putUtfString("sequenceID", sequenceNumber);
+        data.putLong("totalBetPoint", bet);
+        data.putLong("win", win);
+        data.putLong("userPoint", userPoint);
+        data.putUtfString("code", code);
+        data.putLong("newCurrentPoints", newCurrentPoints);
+
+        log.info( "[" + zoneName + "]" + "[" + roomName + "]" + player.getName() + ", " + data.toJson());
+
+        Date time = new Date();
+
+        //json
+        JSONObject json = new JSONObject();
+        json.put("mode", String.valueOf(mode));
+        json.put("bet", String.valueOf((double)bet / (double)100));
+        json.put("lines", String.valueOf(maxLine));
+        json.put("win", String.valueOf((double)win / (double)100));
+        json.put("time", time);
+        json.put("wheel", String.valueOf(maxGrid));
+        json.put("reel", String.valueOf(maxReel));
+        json.put("grid", grid);
+//		json.put("winLinesDetail", gridWinPos);
+
+        log.info("[" + zoneName + "]" + "[" + roomName + "]" + "setGameResult," + player.getName() + "," + bet + "," + win + "," + userPoint + "," + json.toString());
+
+        //賽果 api版 額外送帶局數局號ㄝ, pp版 不變
+        ISFSObject resp = new SFSObject();
+
+        resp = recordClass.setGameResult(zoneName, roomName, Integer.valueOf(player.getProperty("LoginState").toString()), memberID, 0, gameID, getGameRoom().getId(), round, sequenceNumber, grpID, bet, 0, win, userPoint, json.toString(), player.getSession().getAddress(), sequenceNumber, gameType, Integer.parseInt(channelID));
+
+        return resp;
+    }
+
+    //結束將局 pp版傳送將號  api版傳送將局資訊
+    public ISFSObject setGameComplete(User player, long betPoints, long winPoints, int gameType)
+    {
+        ISFSObject resp = new SFSObject();
+        resp.putInt("Ret", 99);
+
+        int memberID = Integer.parseInt(player.getProperty("MemberID").toString());
+
+        if(getZone().getProperty("DBMode").equals("PP"))
+        {
+            log.info("[" + zoneName + "]" + "[" + roomName + "]" + "setGameComplete," + sequenceNumber);
+
+            resp.putInt("Ret", recordClass.GameComplete(zoneName, roomName, Integer.valueOf(player.getProperty("LoginState").toString()), memberID, sequenceNumber));
+        }
+        else if (getZone().getProperty("DBMode").equals("Api"))
+        {
+            log.info("[" + zoneName + "]" + "[" + roomName + "]" + "setGameComplete," + sequenceNumber);
+
+            resp = recordClass.setGameResultApi(zoneName, roomName, memberID, Integer.valueOf(player.getProperty("LoginState").toString()), gameID, sequenceNumber, grpID + "-" + round, seqRound, betPoints, winPoints, Integer.parseInt(channelID), 0, gameType);
+
+            //將局數歸零
+            seqRound = 0;
+        }
+
+        return resp;
+    }
+
+    //取歷史紀錄
+    public ISFSObject getGameHistory(User player, int day, int page, int quantity)
+    {
+        ISFSObject data = getRecord.getGameRecord(zoneName, roomName, Integer.valueOf(player.getProperty("LoginState").toString()), Integer.parseInt(player.getProperty("MemberID").toString()), gameID, day, page, quantity);
+        log.info( "[" + zoneName + "]" + "[" + roomName + "]" + "getGameHistory," + data.toJson());
+        return data;
+    }
+
+    //取歷史詳情
+    public ISFSObject getHistoryDetail(User player, String gameNumber)
+    {
+        ISFSObject data = new SFSObject();
+
+//		ISFSObject data = getRecordDetail.getGameRecordDetail(zoneName, roomName, Integer.valueOf(player.getProperty("LoginState").toString()), Integer.parseInt(player.getProperty("MemberID").toString()), gameNumber);
+//		log.info( "[" + zoneName + "]" + "[" + roomName + "]" + "getHistoryDetail," + data.toJson());
+
+        return data;
+    }
 
 
 
